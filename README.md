@@ -44,7 +44,7 @@ Tested on Linux, macOS, and WSL.
 
 ```text
 .
-├── 403.sh
+├── 403bypass.sh
 ├── payloads.txt
 └── README.md
 ```
@@ -54,7 +54,7 @@ Tested on Linux, macOS, and WSL.
 
 ```bash
 chmod +x tool.sh
-./tool.sh -u <target_url> [options]
+./403bypass.sh -u <target_url> [options]
 ```
 
 ---
@@ -62,11 +62,11 @@ chmod +x tool.sh
 ## 🧪 Examples
 
 ```bash
-./403.sh -u https://example.com/admin
+./403bypass.sh -u https://example.com/admin
 
-./403.sh -u https://example.com/api/admin -m POST
+./403bypass.sh -u https://example.com/api/admin -m POST
 
-./403.sh -u https://example.com/admin \
+./403bypass.sh -u https://example.com/admin \
   -H "Authorization: Bearer TOKEN" \
   -H "X-Forwarded-For: 127.0.0.1"
 ```
