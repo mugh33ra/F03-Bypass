@@ -12,7 +12,7 @@ termwidth="$(tput cols)"
 default_method="GET"
 method=""
 max_jobs=5  # Adjust this to change speed (parallel requests)
-
+headers=()
 
 banner() {
 
@@ -36,6 +36,7 @@ help_usage() {
     echo "Options:"
     echo "  -u, --url        Specify <Target_Url>"
     echo "  -m, --method     Specify Method <POST, PUT, PATCH> (Default, GET)"
+    echo "  -H, --header     Add custom header (repeatable)"
     echo "  -h, --help       Display help and exit"
 }
 
@@ -55,9 +56,13 @@ while [[ $# -gt 0 ]]; do
             } || { echo "[!] Url is missing"; exit 1; } ;;
         -m|--method)
             [[ -n $2 && $2 != -* ]] && { method=$2; shift 2; } || { echo "[!] Method missing"; exit 1; } ;;
+        -H|--header)
+            [[ -n $2 && $2 != -* ]] && {
+                headers+=("-H" "$2")
+                shift 2
+            } || { echo "[!] Header missing"; exit 1; } ;;
         -h|--help)
             banner; help_usage; exit 0; shift ;;
-
         *) echo "[!] Unknown flag $1"; exit 1 ;;
     esac
 done
@@ -65,30 +70,41 @@ done
 method=${method:-$default_method}
 [[ ! -f "payloads.txt" ]] && { echo -e "${red}[!] payloads.txt not found${end}"; exit 1; }
 
-
 run_check() {
     local p="$1"
     local current_p=$(echo "$p" | sed "s|\${pat}|$pat|g")
     local path_is_is_flag=""
 
-    # --path-as-is if payload contains normalization-sensitive characters
-    if [[ "$current_p" =~ ".." || "$current_p" =~ ";" || "$current_p" =~ "//" ]]; then
+    # Enable --path-as-is only when curl would normalize the path
+    if [[ "$current_p" =~ (//|/\.\./|\.\./|%2e|%252e|%2f|\\|;) ]]; then
         path_is_is_flag="--path-as-is"
     fi
 
-    local res=$(curl -k -s $path_is_is_flag -o /dev/null -w "%{http_code}|%{size_download}" "${target}${current_p}" -X "$method" -H "User-Agent: Mozilla/5.0")
+    local res=$(curl -k -s $path_is_is_flag "${headers[@]}" \
+        -o /dev/null -w "%{http_code}|%{size_download}" \
+        "${target}${current_p}" -X "$method" -H "User-Agent: Mozilla/5.0")
+
     local st=$(echo "$res" | cut -d'|' -f1)
     local len=$(echo "$res" | cut -d'|' -f2)
 
-    if [[ "$st" =~ ^4 ]]; then
-        echo -e "Payload [ ${yellow}${current_p}${end} ]: ${red}Status: $st, Length : $len${end}"
+    if [[ "$st" =~ ^2 ]]; then
+        color="${green}"
+    elif [[ "$st" =~ ^3 ]]; then
+        color="${yellow}"
+    elif [[ "$st" =~ ^4 ]]; then
+        color="${red}"
     else
-        echo -e "Payload [ ${yellow}${current_p}${end} ]: ${green}Status: $st, Length : $len${end}"
+        color="${cyan}"
+    fi
+
+    echo -e "Payload [ ${yellow}${current_p}${end} ]: ${color}Status: $st, Length : $len${end}"
+
+    if [[ "$st" =~ ^2 ]]; then
         local line=$(printf '%.0s─' $(seq 1 $((termwidth - 2))))
         echo -e "╭${line}╮"
         echo -e " Payload [ ${yellow}${current_p}${end} ]:"
         echo -e " METHOD: '${cyan}${method}${end}'"
-        echo -e " COMMAND: ${cyan}curl -k -s $path_is_is_flag -X $method '${target}${current_p}' -H 'User-Agent: Mozilla/5.0'${end}"
+        echo -e " COMMAND: ${cyan}curl -k -s $path_is_is_flag -X $method '${target}${current_p}' ${headers[*]} -H 'User-Agent: Mozilla/5.0'${end}"
         echo -e "╰${line}╯"
     fi
 }
@@ -106,7 +122,6 @@ encode_bypass() {
 
         run_check "$p" &
 
-        
         if [[ $(jobs -r | wc -l) -ge $max_jobs ]]; then
             wait -n
         fi
