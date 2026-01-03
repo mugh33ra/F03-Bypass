@@ -26,7 +26,7 @@ This tool automates detection of access control bypasses caused by:
 - 📏 Response length comparison
 - 🧪 Reproducible curl command output
 - 🖥️ Clean, colored terminal output
-- 🔐 HTTPS support (`-k` enabled)
+- 🧷 Bypass with headers support
 
 ---
 
@@ -53,8 +53,13 @@ Tested on Linux, macOS, and WSL.
 ## 🚀 Usage
 
 ```bash
-chmod +x tool.sh
-./403bypass.sh -u <target_url> [options]
+Usage: 403bypass.sh -u <url> [options]
+Options:
+  -u, --url        Specify <Target_Url>
+  -m, --method     Specify Method <POST, PUT, PATCH> (Default, GET)
+  -H, --header     Add custom header (repeatable)
+  -a, --all        Run both URL encode and header bypass tests
+  -h, --help       Display help and exit
 ```
 
 ---
@@ -69,13 +74,18 @@ chmod +x tool.sh
 ./403bypass.sh -u https://example.com/admin \
   -H "Authorization: Bearer TOKEN" \
   -H "X-Forwarded-For: 127.0.0.1"
+
+./403bypass.sh -u https://example.com/admin \
+  -H "Authorization: Bearer TOKEN" \
+  --all
 ```
 
 ---
 
 # 👤 Author
+[@me_dheeraj](https://x.com/me_dheeraj)
 
-## Ahmad Mugheera
+## Enhanced By Ahmad Mugheera
 - 🐦 X (Twitter): [@mugh33ra](https://x.com/mugh33ra)
 - 💼 LinkedIn: [@mugh33ra](www.linkedin.com/in/ahmadmugheera)
 - 🧑‍💻 GitHub: @mugh33ra
