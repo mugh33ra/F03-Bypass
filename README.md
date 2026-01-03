@@ -30,26 +30,6 @@ This tool automates detection of access control bypasses caused by:
 
 ---
 
-## 📦 Requirements
-
-- Bash 4.3+
-- curl
-- tput
-
-Tested on Linux, macOS, and WSL.
-
----
-
-## 📁 File Structure
-
-```text
-.
-├── 403bypass.sh
-├── payloads.txt
-└── README.md
-```
----
-
 ## 🚀 Usage
 
 ```bash
