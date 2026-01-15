@@ -13,7 +13,7 @@ default_method="GET"
 method=""
 max_jobs=5  # Adjust this to change speed (parallel requests)
 headers=()
-test_mode="url"
+test_mode="url"  # Default: url encode bypass only
 
 
 
@@ -124,7 +124,9 @@ run_check() {
         color="${green}"
     elif [[ "$st" =~ ^3 ]]; then
         color="${yellow}"
-    elif [[ "$st" =~ ^4 ]]; then
+    elif [[ "$st" =~ 405 || "$st" =~ 401 || "$st" =~ 429 ]]; then
+        color="${blue}"
+    elif [[ "$st" =~ ^4[0-9]{2}$ ]]; then
         color="${red}"
     else
         color="${cyan}"
@@ -229,10 +231,10 @@ header_bypass() {
 main() {
 
     if [[ "$test_mode" == "url" ]]; then
-        banner
-        encode_bypass
+        banner        # Show banner here
+        encode_bypass # No banner inside this function
     elif [[ "$test_mode" == "all" ]]; then
-        banner       
+        banner
         encode_bypass
         echo ""
         header_bypass
