@@ -63,9 +63,7 @@ Options:
 ---
 
 # 👤 Author
-[@me_dheeraj](https://x.com/me_dheeraj)
-
-## Enhanced By Ahmad Mugheera
+ Ahmad Mugheera
 - 🐦 X (Twitter): [@mugh33ra](https://x.com/mugh33ra)
 - 💼 LinkedIn: [@mugh33ra](www.linkedin.com/in/ahmadmugheera)
 - 🧑‍💻 GitHub: @mugh33ra
