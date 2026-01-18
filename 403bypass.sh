@@ -13,7 +13,7 @@ default_method="GET"
 method=""
 max_jobs=5  # Adjust this to change speed (parallel requests)
 headers=()
-test_mode="url"  # Default: url encode bypass only
+test_mode="url"
 
 
 
